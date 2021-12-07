@@ -14,13 +14,29 @@
 using namespace std;
 
 template<typename T>
-void copy_array(const T *from, T *to, size_t count) {
-    // TODO
+void copy_array(const T *from, T *to, size_t count)
+{
+    if (count == 0) return;
+    for (int64_t i = 0; i < count; i++)
+        to[i] = from[i];
 }
 
 template<typename T>
-void print_array(const T *parr, size_t count) {
-    // TODO
+void print_array(const T *parr, size_t count)
+{
+    if (count == 0) return;
+    for (int i = 0; i < count; i++)
+        cout << parr[i] << " ";
+    cout << endl;
+}
+
+template<typename T>
+size_t find_min(const T *where, size_t count, const T &what)
+{
+    if (count == 0) return 0;
+    while (count--)
+        if (where[count - 1] == what) return count - 1;
+    return -1;
 }
 
 int main(int argc, char **argv) {
