@@ -30,13 +30,16 @@ void print_array(const T *parr, size_t count)
     cout << endl;
 }
 
+// здесь некорректно условие, не ясно, что искать: индекс минимума или индекс элемента с указанным значением
+// я ищу минимум
 template<typename T>
-size_t find_min(const T *where, size_t count, const T &what)
+size_t find_min(const T *where, size_t count)
 {
     if (count == 0) return 0;
-    while (count--)
-        if (where[count - 1] == what) return count - 1;
-    return -1;
+    T res = where[count - 1];
+    while (--count)
+        res = min(res, where[count - 1]);
+    return res;
 }
 
 int main(int argc, char **argv) {
@@ -46,5 +49,8 @@ int main(int argc, char **argv) {
     copy_array(arr, arr2, sizeof(arr)/sizeof(arr[0]));
     print_array(arr, sizeof(arr)/sizeof(arr[0]));
     print_array(arr2, sizeof(arr2)/sizeof(arr2[0]));
+    cout << "\n";
+    cout << find_min(arr, sizeof(arr)/sizeof(arr[0]));
+    //system("pause");
     return 0;
 }
