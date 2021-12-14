@@ -1,60 +1,21 @@
-#include <cassert>
 #include <iostream>
 #include <string>
 
-///
-/// Домашнее задание:
-///
-/// 1.  Добавить findMin() и findMax() в классе Node, аналогичные таковым в Tree;
-///     они должны искать в поддереве, корнем которого является текущий узел.
-///
-/// 2.  Реализовать малый правый поворот, а также большие левый и правый повороты
-///     в классе Tree, по аналогии с малым левым поворотом.
-///
-/// 3.  Реализовать префиксный оператор «++» для итератора.
-///
-/// 4.  Реализовать Tree::findNearest() и Tree::deleteNode().
-///
-/// 5.  Реализовать юнит-тесты на все публичные методы классов Tree и TreeIterator,
-///     кроме тривиальных. Прогонять эти тесты в функции main().
-///
-
-/**
-1. Добавление.
-    а) (интерфейсный способ) Создаём дерево, вызываем addNode(), проверяем:
-        * что элемент добавился?
-        * что элемент добавился по соседству с определёнными другими элементами?
-        * сравнить дерево целиком с эталоном?
-    б) (инвазивный) Конструируем объекты Node и Tree вручную, затем вызываем addNode(), проверяем (то же).
-
-2. Удаление.
-    а) Создаём дерево, вызываем removeNode(), проверяем:
-        * что элемента в дереве больше нет?
-        * что бывшие соседи элемента получили определённое новое состояние?
-        * сравнить дерево целиком с эталоном?
-    б) Конструируем объекты Node и Tree вручную, затем вызываем removeNode(), проверяем (то же).
-
-
-3. Проход по дереву.
-    а) Создаём дерево, создаём итератор, в цикле сдвигаем итератор, проверяя на каждом шаге, что
-       мы перешли к определённому элементу.
-    б) То же самое, но дерево создаётся вручную.
-
-*/
-
 class Tree;
 
-class Node {
+class Node
+{
+    size_t height = 1;
     Node *left, *right, *parent;
     friend class Tree;
 
 public:
-    Node* getLeft() { return left; }
-    const Node* getLeft() const { return left; }
-    Node* getRight() { return right; }
-    const Node* getRight() const { return right; }
-    Node* getParent() { return parent; }
-    const Node* getParent() const { return parent; }
+    Node *getLeft() { return left; }
+    const Node *getLeft() const { return left; }
+    Node *getRight() { return right; }
+    const Node *getRight() const { return right; }
+    Node *getParent() { return parent; }
+    const Node *getParent() const { return parent; }
 
     std::string name;
     std::string description;
@@ -64,14 +25,16 @@ public:
       : left(nullptr), right(nullptr), parent(parent_), name(name_)
     { }
 
-    Node* findMin() {
+    Node *findMin()
+    {
         Node *node = this;
         while (node->left)
             node = node->left;
         return node;
     }
 
-    Node* findMax() {
+    Node *findMax()
+    {
         Node *node = this;
         while (node->right)
             node = node->right;
@@ -79,7 +42,8 @@ public:
     }
 };
 
-class TreeIterator : public std::iterator<std::input_iterator_tag, Node> {
+class TreeIterator : public std::iterator<std::input_iterator_tag, Node>
+{
     Node *node;
 
 public:
@@ -94,95 +58,233 @@ public:
 
     /// TreeIterator it;  ++it      it++
 
-    TreeIterator& operator++() {        /// префиксный   ++it
-        /// 1. Если есть элемент справа, берём его.
-        /// 2. Иначе, поднимаемся наверх:
-        /// 2.1. Если мы уже наверху, то проход закончен (node выставляем в nullptr).
-        /// 2.2. Если мы были в левом поддереве, то возвращаем правый элемент текущего родителя
-        /// 2.3. Иначе, переходим на шаг 2.
+    TreeIterator& operator++()        /// префиксный   ++it
+    {
+        if (node->getRight())
+        {
+            node = node->getRight();
+            while (node->getLeft()) node = node->getLeft();
+            return *this;
+        }
 
-	// TODO
-
+        Node *prev_node = node;
+        node = node->getParent();
+        while(node)
+        {
+            if (node->getRight() != prev_node)
+            {
+                node = node->getRight();
+                while (node->getLeft()) node = node->getLeft();
+                return *this;
+            }
+            prev_node = node;
+            node = node->getParent();
+        }
         return *this;
     }
-    TreeIterator operator++(int) {      /// постфиксный   it++
+    TreeIterator operator++(int)      /// постфиксный   it++
+    {
         TreeIterator old(node);
         ++*this;
         return old;
     }
 
-    TreeIterator& operator--() {
-        /// Аналогично operator++()
+    TreeIterator& operator--()
+    {
+        if (node->getLeft())
+        {
+            node = node->getLeft();
+            while (node->getRight()) node = node->getRight();
+            return *this;
+        }
+
+        Node *prev_node = node;
+        node = node->getParent();
+        while(node)
+        {
+            if (node->getLeft() != prev_node)
+            {
+                node = node->getLeft();
+                while (node->getRight()) node = node->getRight();
+                return *this;
+            }
+            prev_node = node;
+            node = node->getParent();
+        }
+        return *this;
     }
-    TreeIterator operator--(int) {
+    TreeIterator operator--(int)
+    {
         TreeIterator old(node);
         --*this;
         return old;
     }
 };
 
-class Tree {
+class Tree
+{
     Node *root;
 
     /// Вход: b > a, a - родитель b
     /// Выход: b - родитель a
-    void smallTurnLeft(Node *a, Node *b) {
-        /// 1. Поправить right для родителя (a)
-        /// 2. Поправить parent (b)
-        /// 3. Поправить parent (a)
-        /// 4. Переместить левого потомком (b), сделав его правым потомком (a)
-        /// 5. Инвертировать взаимосвязь (a) и (b)
-
+    void smallTurnLeft(Node *a, Node *b)
+    {
         if (a->parent)
-            a->parent->right = b;
+            if (a->parent->right == a)
+                a->parent->right = b;
+            else
+                a->parent->left = b;
         b->parent = a->parent;
         a->parent = b;
-        if (b->left) {
+        if (b->left)
             b->left->parent = a;
-            a->right = b->left;
-        }
-        b->left = a;
+        a->right = b->left;
+
+        // теперь надо заново сделать высоты
+        size_t height_left  = a->left  ? a->left->height  : 0,
+               height_right = a->right ? a->right->height : 0;
+        a->height = height_left > height_right ? height_left + 1 : height_right + 1;
+
+        height_left  = b->left  ? b->left->height  : 0;
+        height_right = b->right ? b->right->height : 0;
+        b->height = height_left > height_right ? height_left + 1 : height_right + 1;
+        // высота родителя будет откорректирована в балансировке
+    }
+    /// имеем b < a, a - родитель b
+    void smallTurnRight(Node *a, Node*b)
+    {
+        if (a->parent)
+            if (a->parent->right == a)
+                a->parent->right = b;
+            else
+                a->parent->left = b;
+        b->parent = a->parent;
+        a->parent = b;
+        if (b->right)
+            b->right->parent = b;
+        a->left = b->right;
+
+        // теперь надо заново сделать высоты
+        size_t height_left  = a->left  ? a->left->height  : 0,
+               height_right = a->right ? a->right->height : 0;
+        a->height = height_left > height_right ? height_left + 1 : height_right + 1;
+
+        height_left  = b->left  ? b->left->height  : 0;
+        height_right = b->right ? b->right->height : 0;
+        b->height = height_left > height_right ? height_left + 1 : height_right + 1;
+        // высота родителя будет откорректирована в балансировке
     }
 
-    void smallTurnRight(Node *a, Node *b) {
-	// TODO
+    /// имеем a < b, a родитель b
+    /// b > c, b - родитель c
+    void BigTurnRight(Node *a, Node *b, Node *c)
+    {
+        smallTurnRight(b, c);
+        smallTurnLeft(a, c);
+    }
+    /// имеем a > b, a - родитель b
+    /// b < c, b - родитель c
+    void BigTurnLeft(Node *a, Node *b, Node *c)
+    {
+        smallTurnLeft(b, c);
+        smallTurnRight(a, c);
     }
 
-    void bigTurnLeft(Node *a, Node *b, Node *c) {
-	// TODO
-    }
+    // дерево считается сбалансированным, если для любого узла
+    // высота его правого поддерева отличается от высоты левого не более, чем на 1
+    // на самом деле такое условие не гарантирует полной сбалансированности дерева,
+    // то есть может оказаться, что есть два таких листовых узла таких,
+    // что расстояние от одного узла до корня намного больше расстояния от другого узла до корня
+    // возможно здесь есть повторения одного и того же действия
+    void BalanceTree(Node *node)
+    {
+        size_t height_left, height_right, diff;
+        Node *currentNode = node;
+        do
+        {
+            height_left  = currentNode->left  ? currentNode->left->height  : 0;
+            height_right = currentNode->right ? currentNode->right->height : 0;
+            diff = height_left - height_right;
 
-    void bigTurnRight(Node *a, Node *b, Node *c) {
-	// TODO
-    }
+            // высота левого поддерева больше
+            if (diff == 2)
+            {
+                // мы смотрим левый узел данного узла, он, очевидно, не нулевой
+                // нужно, чтобы в левом узле высота левого поддерева
+                // была не меньше высоты правого
+                height_left  = currentNode->left->left  ? node->left->height  : 0;
+                height_right = currentNode->left->right ? node->right->height : 0;
+                // если 
+                if (height_left - height_right < 0)
+                    smallTurnLeft(currentNode->left, currentNode->left->right);
 
+                smallTurnRight(currentNode, currentNode->left);
+            }
+            // высота правого поддерева больше
+            if (diff == -2)
+            {
+                // аналогичные рассуждения, что и для diff = 2
+                height_left  = currentNode->right->left  ? node->left->height  : 0;
+                height_right = currentNode->right->right ? node->right->height : 0;
+                if (height_left - height_right > 0)
+                    smallTurnRight(currentNode->right, currentNode->right->left);
+
+                smallTurnLeft(currentNode, currentNode->right);
+            }
+
+            height_left  = currentNode->left  ? currentNode->left->height  : 0;
+            height_right = currentNode->right ? currentNode->right->height : 0;
+            currentNode->height = height_left > height_right ? height_left : height_right;
+
+            currentNode = currentNode->parent;
+        } while (currentNode);
+    }
 public:
-    Node* getRoot() { return root; }
-    const Node* getRoot() const { return root; }
+    Node *getRoot() { return root; }
+    const Node *getRoot() const { return root; }
 
     Tree() : root(nullptr) { }
-    Node* addNode(const std::string &name) {
+    Node *addNode(const std::string &name)
+    {
         Node *closest = findClosest(name);
         if (closest && closest->name == name)
             return nullptr;
         Node *newNode = new Node(name, closest);
 
-        /// 1. Определиться, будем добавлять левый или правый элемент (родитель - closest).
-        /// 2. После добавления поднимаемся на уровень выше (в closest) и проверяем балансировку дерева
-        ///    Сбалансировано - если разница высот левого и правого поддеревьев не более 1.
-        /// 3. Если не сбалансировано, то выполняем поворот.
-        ///    4 вида поворотов:
-        ///       малый левый поворот
-        ///       малый правый поворот
-        ///       большой левый поворот
-        ///       большой правый поворот
-        ///     Определить вид требуемого поворота и произвести его
+        if (!root)
+        {
+            root = newNode;
+            return newNode;
+        }
 
+        if (!closest) /// значит наш элемент больше максимального
+        {
+            /// добавляем самый правый элемент
+            Node *prevMax = root->findMax();
+            prevMax->right = newNode;
+            newNode->parent = prevMax;
+        }
+        else /// нашелся тот, что правее
+        {
+            /// добавляем левый от ближайшего
+            closest->left = newNode;
+            newNode->parent = closest;
+        }
+        // нужно обновить высоту в родителях
+        Node *currentNode = newNode;
+        while (currentNode->parent && currentNode->parent->height == currentNode->height)
+        {
+            currentNode->parent->height++;
+            currentNode = currentNode->parent;
+        }
+        BalanceTree(newNode);
         return newNode;
     }
 
-    Node* findNode(const std::string &name) {
-        for (auto node = root; node;) {
+    Node *findNode(const std::string &name)
+    {
+        for (auto node = root; node;)
+        {
             auto res = name.compare(node->name);
             if (res == 0)
                 return node;
@@ -194,7 +296,8 @@ public:
         return nullptr;
     }
 
-    Node* findMin() {
+    Node *findMin()
+    {
         Node *node = root;
         if (!node)
             return nullptr;
@@ -203,7 +306,8 @@ public:
         return node;
     }
 
-    Node* findMax() {
+    Node *findMax()
+    {
         Node *node = root;
         if (!node)
             return nullptr;
@@ -213,10 +317,81 @@ public:
     }
 
     /// Ищет узел с таким же, или максимально близким справа ("большим") значением name.
-    Node* findClosest(const std::string &name) {
+    Node *findClosest(const std::string &name)
+    {
+        Node *closest = nullptr;
+        for (auto node = root; node;)
+        {
+            auto res = name.compare(node->name);
+            if (res == 0)
+                return node;
+            if (res > 0)
+                node = node->right;
+            else
+            {
+                closest = node;
+                node = node->left;
+            }
+        }
+        return closest;        
     }
 
-    void deleteNode(Node* node) {
+    void deleteNode(Node *node)
+    {
+        // похоже, что предполагается, что этот узел есть в дереве
+        // найдем ближайший: такой, что если поменяем на него, то ничего не изменится
+        // обязательное условие: он должен быть листовой
+        Node *closest = nullptr, *balanceFrom = node;
+        // ищем самый левый в правом поддереве
+        for (auto tmp = node->right; tmp;)
+        {
+            closest = tmp;
+            tmp = tmp->left;
+        }
+        // справа ничего не было, слева не более одного узла
+        // нужно еще предка подправить
+        if (!closest)
+        {
+            // слева узел есть
+            if (node->left)
+            {
+                node->name = node->left->name;
+                delete node->left;
+                node->left = nullptr;
+            }
+            else
+            {
+                if (!node->parent)
+                    delete node;
+                else if (node->parent->right == node)
+                {
+                    balanceFrom = node->parent;
+
+                    node->parent->right = nullptr;
+                    delete node;
+                }
+                else
+                {
+                    balanceFrom = node->parent;
+
+                    node->parent->left = nullptr;
+                    delete node;
+                }
+            }
+        }
+        else
+        {
+            node->name = closest->name;
+            //у closest родитель точно есть
+            balanceFrom = closest->parent;
+            if (closest->parent->right == closest)
+                closest->parent->right = nullptr;
+            else
+                closest->parent->left = nullptr;
+            delete closest;
+        }
+
+        BalanceTree(balanceFrom);
     }
 
     TreeIterator begin() {}     /// Возвращает итератор, указывающий на минимальный элемент
@@ -224,13 +399,7 @@ public:
 };
 
 
-/// TreeIterator it;
-/// it++     ++it
-
-
-#include <map>
-#include <set>
-
+#include <cassert>
 
 void testAddNode() {
     Tree *result = new Tree();
@@ -269,11 +438,44 @@ void testAddNode() {
     /// https://gist.github.com/grayed
 }
 
+#include <map>
+#include <set>
+
 int main()
 {
-    std::cerr << "Test" << std::endl;
-    testAddNode();
+    Tree tree;
+    //tree.addNode("First");
+    //tree.addNode("Second");
+    // tree.addNode("Third");
+    std::cout << "Our tree:" << std::endl;
+    for (auto &node : tree) {
+        std::cout << node.name << ": " << node.description << std::endl;
+    }
 
+    const Node *n = tree.getRoot();
+
+    std::set<std::string> setOfStrings;
+    std::map<std::string, std::string> myMap;
+
+    setOfStrings.insert("First");
+    setOfStrings.insert("Second");
+    setOfStrings.insert("Third");
+    setOfStrings.insert("First");
+    setOfStrings.insert("First");
+    std::cout << "Set contains:" << std::endl;
+    for (auto s : setOfStrings)
+        std::cout << s << std::endl;
+    std::cout << std::endl;
+
+    myMap["First"] = "La-la-la";
+    myMap["Second"] = "La-la-la";
+    myMap["Third"] = "La-la-la";
+    myMap["First"] = "Fa-fa-fa";
+    std::cout << "Map contains:" << std::endl;
+    for (auto s : myMap)    /// std::pair<std::string, std::string>
+        std::cout << s.first << " -> " << s.second << std::endl;
+    std::cout << std::endl;
+
+    //system("pause");
     return 0;
 }
-
