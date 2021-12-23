@@ -5,6 +5,7 @@ class Tree;
 
 class Node
 {
+//public:
     size_t height = 1;
     Node *left, *right, *parent;
     friend class Tree;
@@ -139,6 +140,7 @@ class Tree
         if (b->left)
             b->left->parent = a;
         a->right = b->left;
+        b->left = a;
 
         // теперь надо заново сделать высоты
         size_t height_left  = a->left  ? a->left->height  : 0,
@@ -163,6 +165,7 @@ class Tree
         if (b->right)
             b->right->parent = b;
         a->left = b->right;
+        b->right = a;
 
         // теперь надо заново сделать высоты
         size_t height_left  = a->left  ? a->left->height  : 0,
@@ -198,7 +201,8 @@ class Tree
     // возможно здесь есть повторения одного и того же действия
     void BalanceTree(Node *node)
     {
-        size_t height_left, height_right, diff;
+        size_t height_left = 0, height_right = 0;
+        int diff;
         Node *currentNode = node;
         do
         {
@@ -212,10 +216,10 @@ class Tree
                 // мы смотрим левый узел данного узла, он, очевидно, не нулевой
                 // нужно, чтобы в левом узле высота левого поддерева
                 // была не меньше высоты правого
-                height_left  = currentNode->left->left  ? node->left->height  : 0;
-                height_right = currentNode->left->right ? node->right->height : 0;
+                height_left  = currentNode->left->left  ? currentNode->left->height  : 0;
+                height_right = currentNode->left->right ? currentNode->right->height : 0;
                 // если 
-                if (height_left - height_right < 0)
+                if (int(height_left) - int(height_right) < 0)
                     smallTurnLeft(currentNode->left, currentNode->left->right);
 
                 smallTurnRight(currentNode, currentNode->left);
@@ -224,9 +228,9 @@ class Tree
             if (diff == -2)
             {
                 // аналогичные рассуждения, что и для diff = 2
-                height_left  = currentNode->right->left  ? node->left->height  : 0;
-                height_right = currentNode->right->right ? node->right->height : 0;
-                if (height_left - height_right > 0)
+                height_left  = currentNode->right->left  ? currentNode->left->height  : 0;
+                height_right = currentNode->right->right ? currentNode->right->height : 0;
+                if (int(height_left) - int(height_right) > 0)
                     smallTurnRight(currentNode->right, currentNode->right->left);
 
                 smallTurnLeft(currentNode, currentNode->right);
@@ -235,7 +239,8 @@ class Tree
             height_left  = currentNode->left  ? currentNode->left->height  : 0;
             height_right = currentNode->right ? currentNode->right->height : 0;
             currentNode->height = height_left > height_right ? height_left : height_right;
-
+            currentNode->height++;
+            
             currentNode = currentNode->parent;
         } while (currentNode);
     }
@@ -444,9 +449,9 @@ void testAddNode() {
 int main()
 {
     Tree tree;
-    //tree.addNode("First");
-    //tree.addNode("Second");
-    // tree.addNode("Third");
+    tree.addNode("First");
+    tree.addNode("Second");
+    tree.addNode("Third");
     std::cout << "Our tree:" << std::endl;
     for (auto &node : tree) {
         std::cout << node.name << ": " << node.description << std::endl;
@@ -467,15 +472,11 @@ int main()
         std::cout << s << std::endl;
     std::cout << std::endl;
 
-    myMap["First"] = "La-la-la";
-    myMap["Second"] = "La-la-la";
-    myMap["Third"] = "La-la-la";
-    myMap["First"] = "Fa-fa-fa";
-    std::cout << "Map contains:" << std::endl;
-    for (auto s : myMap)    /// std::pair<std::string, std::string>
-        std::cout << s.first << " -> " << s.second << std::endl;
-    std::cout << std::endl;
+    // этот тест был успешно пройден
+    testAddNode();
 
-    //system("pause");
+
+    system("pause");
     return 0;
 }
+
